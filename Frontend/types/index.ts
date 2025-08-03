@@ -14,6 +14,7 @@ export interface Investimento {
 export interface Objetivo {
   id: string
   nome: string
+  valor_meta?: number
   investimentos: Investimento[]
 }
 

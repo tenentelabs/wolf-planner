@@ -11,7 +11,7 @@ import { Plus } from "lucide-react"
 import type { Objetivo } from "@/types"
 
 interface ObjetivoFormProps {
-  onSubmit: (nome: string) => void
+  onSubmit: (nome: string, valorMeta?: number) => void
   objetivo?: Objetivo
   trigger?: React.ReactNode
 }
@@ -19,13 +19,16 @@ interface ObjetivoFormProps {
 export function ObjetivoForm({ onSubmit, objetivo, trigger }: ObjetivoFormProps) {
   const [open, setOpen] = useState(false)
   const [nome, setNome] = useState(objetivo?.nome || "")
+  const [valorMeta, setValorMeta] = useState(objetivo?.valor_meta?.toString() || "")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(nome)
+    const meta = valorMeta ? parseFloat(valorMeta) : undefined
+    onSubmit(nome, meta)
     setOpen(false)
     if (!objetivo) {
       setNome("")
+      setValorMeta("")
     }
   }
 
@@ -53,6 +56,21 @@ export function ObjetivoForm({ onSubmit, objetivo, trigger }: ObjetivoFormProps)
               placeholder="Ex: Aposentadoria, Casa própria, Viagem..."
               required
             />
+          </div>
+          <div>
+            <Label htmlFor="valorMeta">Meta Financeira (Opcional)</Label>
+            <Input
+              id="valorMeta"
+              type="number"
+              step="0.01"
+              min="0"
+              value={valorMeta}
+              onChange={(e) => setValorMeta(e.target.value)}
+              placeholder="Ex: 15000 (deixe vazio se não quiser meta)"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Defina um valor que você pretende atingir com este objetivo
+            </p>
           </div>
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

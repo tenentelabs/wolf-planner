@@ -73,6 +73,18 @@ export default function DashboardPage() {
     return (getTotalObjetivo(objetivo) / total) * 100
   }
 
+  const getProgressoMeta = (objetivo: Objetivo) => {
+    if (!objetivo.valor_meta || objetivo.valor_meta === 0) return null
+    const totalInvestido = getTotalObjetivo(objetivo)
+    const progresso = Math.min((totalInvestido / objetivo.valor_meta) * 100, 100)
+    return {
+      progresso,
+      totalInvestido,
+      meta: objetivo.valor_meta,
+      atingida: totalInvestido >= objetivo.valor_meta
+    }
+  }
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -239,7 +251,20 @@ export default function DashboardPage() {
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1 font-medium">{percentage.toFixed(1)}% do total</div>
+                      <div className="flex justify-between items-center mt-1">
+                        <div className="text-xs text-muted-foreground font-medium">{percentage.toFixed(1)}% do total</div>
+                        {(() => {
+                          const progressoMeta = getProgressoMeta(objetivo)
+                          if (progressoMeta) {
+                            return (
+                              <div className={`text-xs font-medium ${progressoMeta.atingida ? 'text-green-600' : 'text-blue-600'}`}>
+                                Meta: {progressoMeta.progresso.toFixed(1)}%
+                              </div>
+                            )
+                          }
+                          return null
+                        })()}
+                      </div>
                     </div>
                   )
                 })}

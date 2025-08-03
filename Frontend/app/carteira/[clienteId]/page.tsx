@@ -65,12 +65,13 @@ export default function CarteiraPage() {
     }
   }
 
-  const handleAddObjetivo = async (nome: string) => {
+  const handleAddObjetivo = async (nome: string, valorMeta?: number) => {
     try {
       setLoadingAction(true)
       const newObjetivo = await carteirasService.criarObjetivo({
         nome,
-        cliente_id: clienteId
+        cliente_id: clienteId,
+        valor_meta: valorMeta
       })
       setObjetivos([...objetivos, { ...newObjetivo, investimentos: [] }])
     } catch (err: any) {
@@ -80,11 +81,11 @@ export default function CarteiraPage() {
     }
   }
 
-  const handleEditObjetivo = async (objetivoId: string, nome: string) => {
+  const handleEditObjetivo = async (objetivoId: string, nome: string, valorMeta?: number) => {
     try {
       setLoadingAction(true)
-      const updatedObjetivo = await carteirasService.atualizarObjetivo(objetivoId, { nome })
-      setObjetivos(objetivos.map((obj) => (obj.id === objetivoId ? { ...obj, nome: updatedObjetivo.nome } : obj)))
+      const updatedObjetivo = await carteirasService.atualizarObjetivo(objetivoId, { nome, valor_meta: valorMeta })
+      setObjetivos(objetivos.map((obj) => (obj.id === objetivoId ? { ...obj, nome: updatedObjetivo.nome, valor_meta: updatedObjetivo.valor_meta } : obj)))
     } catch (err: any) {
       setError(err.message || "Erro ao atualizar objetivo")
     } finally {
@@ -168,6 +169,18 @@ export default function CarteiraPage() {
 
   const getTotalObjetivo = (objetivo: Objetivo) => {
     return objetivo.investimentos.reduce((total, inv) => total + inv.valor, 0)
+  }
+
+  const getProgressoMeta = (objetivo: Objetivo) => {
+    if (!objetivo.valor_meta || objetivo.valor_meta === 0) return null
+    const totalInvestido = getTotalObjetivo(objetivo)
+    const progresso = Math.min((totalInvestido / objetivo.valor_meta) * 100, 100)
+    return {
+      progresso,
+      totalInvestido,
+      meta: objetivo.valor_meta,
+      atingida: totalInvestido >= objetivo.valor_meta
+    }
   }
 
   if (loading) {
@@ -255,17 +268,47 @@ export default function CarteiraPage() {
             <Card key={objetivo.id}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <div>
-                    <span>{objetivo.nome}</span>
-                    <span className="ml-4 text-lg font-semibold text-accent">
-                      {formatCurrency(getTotalObjetivo(objetivo))}
-                    </span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-2">
+                      <span>{objetivo.nome}</span>
+                      <span className="text-lg font-semibold text-accent">
+                        {formatCurrency(getTotalObjetivo(objetivo))}
+                      </span>
+                    </div>
+                    {(() => {
+                      const progressoMeta = getProgressoMeta(objetivo)
+                      if (progressoMeta) {
+                        return (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="text-muted-foreground">
+                                Meta: {formatCurrency(progressoMeta.meta)}
+                              </span>
+                              <span className={`font-medium ${progressoMeta.atingida ? 'text-green-600' : 'text-blue-600'}`}>
+                                {progressoMeta.progresso.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  progressoMeta.atingida 
+                                    ? 'bg-green-500' 
+                                    : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                                }`}
+                                style={{ width: `${progressoMeta.progresso}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      }
+                      return null
+                    })()}
                   </div>
                   <div className="flex items-center space-x-2">
                     <InvestimentoForm onSubmit={(data) => handleAddInvestimento(objetivo.id, data)} />
                     <ObjetivoForm
                       objetivo={objetivo}
-                      onSubmit={(nome) => handleEditObjetivo(objetivo.id, nome)}
+                      onSubmit={(nome, valorMeta) => handleEditObjetivo(objetivo.id, nome, valorMeta)}
                       trigger={
                         <Button size="sm" variant="outline">
                           <Edit className="h-4 w-4" />

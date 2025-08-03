@@ -39,12 +39,14 @@ class Cliente(ClienteBase):
 class ObjetivoBase(BaseModel):
     nome: str
     descricao: Optional[str] = None
+    valor_meta: Optional[float] = None
 
 class ObjetivoCreate(ObjetivoBase):
     cliente_id: str
 
 class ObjetivoUpdate(ObjetivoBase):
     nome: Optional[str] = None
+    valor_meta: Optional[float] = None
 
 class Objetivo(ObjetivoBase):
     id: str
