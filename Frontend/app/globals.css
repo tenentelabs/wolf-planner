@@ -1,6 +1,67 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Mobile-first responsive design */
+@layer base {
+  html {
+    font-size: 16px;
+  }
+  
+  /* Mobile viewport fix */
+  @media (max-width: 768px) {
+    html {
+      font-size: 14px;
+    }
+    
+    .container {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+    
+    /* Fix button spacing */
+    .flex.items-center.gap-2 {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    /* Stack cards vertically on mobile */
+    .grid.lg\\:grid-cols-2 {
+      grid-template-columns: 1fr !important;
+    }
+    
+    /* Responsive text sizing */
+    h1 {
+      font-size: 1.75rem !important;
+    }
+    
+    h2 {
+      font-size: 1.5rem !important;
+    }
+    
+    /* Modal adjustments */
+    .max-w-md {
+      max-width: calc(100vw - 2rem) !important;
+      margin: 1rem !important;
+    }
+    
+    /* Form improvements */
+    .space-y-4 > * + * {
+      margin-top: 0.75rem !important;
+    }
+  }
+  
+  /* Tablet adjustments */
+  @media (max-width: 1024px) {
+    .text-4xl {
+      font-size: 2rem !important;
+    }
+    
+    .text-xl {
+      font-size: 1.125rem !important;
+    }
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
