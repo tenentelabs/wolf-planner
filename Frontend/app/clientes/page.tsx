@@ -86,10 +86,12 @@ export default function ClientesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-4xl font-bold text-foreground">Clientes</h1>
-        <ClienteForm onSubmit={handleAddCliente} />
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:justify-between sm:items-center sm:mb-10">
+        <h1 className="text-2xl font-bold text-foreground sm:text-4xl">Clientes</h1>
+        <div className="w-full sm:w-auto">
+          <ClienteForm onSubmit={handleAddCliente} />
+        </div>
       </div>
 
       {error && (
@@ -110,37 +112,41 @@ export default function ClientesPage() {
           <StaggeredItem key={cliente.id}>
             <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="text-xl">{cliente.nome}</span>
-                <div className="flex items-center gap-2">
-                  <Button asChild size="sm" variant="secondary" className="hover:bg-primary hover:text-primary-foreground">
-                    <Link href={`/carteira/${cliente.id}`}>
-                      <Target className="h-4 w-4 mr-2" />
-                      Carteira
-                    </Link>
-                  </Button>
-                  <Button asChild size="sm" variant="secondary" className="hover:bg-accent hover:text-accent-foreground">
-                    <Link href={`/dashboard/${cliente.id}`}>
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Dashboard
-                    </Link>
-                  </Button>
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-xl font-semibold">{cliente.nome}</h3>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                    <Button asChild size="sm" variant="secondary" className="hover:bg-primary hover:text-primary-foreground w-full sm:w-auto">
+                      <Link href={`/carteira/${cliente.id}`}>
+                        <Target className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">Carteira</span>
+                        <span className="sm:hidden">Carteira</span>
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm" variant="secondary" className="hover:bg-accent hover:text-accent-foreground w-full sm:w-auto">
+                      <Link href={`/dashboard/${cliente.id}`}>
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">Dashboard</span>
+                        <span className="sm:hidden">Dashboard</span>
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-              </CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2 flex-1">
+                  <p className="text-sm text-muted-foreground flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                     <span className="font-medium">Email:</span>
-                    <span className="text-foreground">{cliente.email}</span>
+                    <span className="text-foreground break-all">{cliente.email}</span>
                   </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <p className="text-sm text-muted-foreground flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                     <span className="font-medium">Telefone:</span>
                     <span className="text-foreground">{cliente.telefone}</span>
                   </p>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <ClienteForm
                     cliente={cliente}
                     onSubmit={(data) => handleEditCliente(cliente.id, data)}

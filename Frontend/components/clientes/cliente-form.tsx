@@ -37,13 +37,14 @@ export function ClienteForm({ onSubmit, cliente, trigger }: ClienteFormProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button>
+          <Button className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Cliente
+            <span className="hidden sm:inline">Adicionar Cliente</span>
+            <span className="sm:hidden">Novo Cliente</span>
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{cliente ? "Editar Cliente" : "Adicionar Cliente"}</DialogTitle>
         </DialogHeader>

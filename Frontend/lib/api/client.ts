@@ -14,28 +14,88 @@ class ApiClient {
     this.token = token;
     if (typeof window !== 'undefined') {
       if (token) {
-        // Set cookie with httpOnly would be better but requires server-side handling
-        document.cookie = `auth_token=${token}; path=/; max-age=3600; SameSite=Strict`;
-        localStorage.setItem('auth_token', token);
+        try {
+          // Múltiplas tentativas de armazenamento para maior confiabilidade
+          const storageOperations = [
+            () => sessionStorage.setItem('auth_token', token),
+            () => localStorage.setItem('auth_token', token),
+            () => localStorage.setItem('auth_token_backup', token),
+            () => {
+              document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax; Secure=${window.location.protocol === 'https:'}`;
+            }
+          ];
+
+          storageOperations.forEach((operation, index) => {
+            try {
+              operation();
+            } catch (e) {
+              console.warn(`Storage operation ${index} failed:`, e);
+            }
+          });
+
+          // Verificação adicional para mobile
+          setTimeout(() => {
+            if (!sessionStorage.getItem('auth_token')) {
+              try {
+                sessionStorage.setItem('auth_token', token);
+              } catch (e) {
+                console.warn('Delayed sessionStorage failed:', e);
+              }
+            }
+          }, 50);
+
+        } catch (e) {
+          console.error('Token storage failed:', e);
+        }
       } else {
-        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        localStorage.removeItem('auth_token');
+        // Limpar todos os storages
+        const clearOperations = [
+          () => sessionStorage.removeItem('auth_token'),
+          () => localStorage.removeItem('auth_token'),
+          () => localStorage.removeItem('auth_token_backup'),
+          () => {
+            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          }
+        ];
+
+        clearOperations.forEach((operation, index) => {
+          try {
+            operation();
+          } catch (e) {
+            console.warn(`Clear operation ${index} failed:`, e);
+          }
+        });
       }
     }
   }
 
   getToken(): string | null {
     if (!this.token && typeof window !== 'undefined') {
-      // Try localStorage first
-      this.token = localStorage.getItem('auth_token');
-      
-      // If not in localStorage, try cookies
-      if (!this.token) {
-        const cookies = document.cookie.split(';');
-        const authCookie = cookies.find(c => c.trim().startsWith('auth_token='));
-        if (authCookie) {
-          this.token = authCookie.split('=')[1];
+      // Try multiple storage methods for better mobile compatibility
+      try {
+        // Try sessionStorage first (mais confiável em alguns mobiles)
+        this.token = sessionStorage.getItem('auth_token');
+        
+        // Then localStorage
+        if (!this.token) {
+          this.token = localStorage.getItem('auth_token');
         }
+        
+        // Then backup
+        if (!this.token) {
+          this.token = localStorage.getItem('auth_token_backup');
+        }
+        
+        // Finally cookies
+        if (!this.token) {
+          const cookies = document.cookie.split(';');
+          const authCookie = cookies.find(c => c.trim().startsWith('auth_token='));
+          if (authCookie) {
+            this.token = authCookie.split('=')[1];
+          }
+        }
+      } catch (e) {
+        console.warn('Storage access error:', e);
       }
     }
     return this.token;

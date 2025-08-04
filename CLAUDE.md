@@ -38,6 +38,7 @@ interface Cliente {
 interface Objetivo {
   id: string
   nome: string
+  valor_meta?: number  // Meta financeira opcional
   investimentos: Investimento[]
 }
 
@@ -59,15 +60,18 @@ interface ClienteCarteira {
 - ✅ Gestão de clientes (CRUD)
 - ✅ Gestão de objetivos de investimento
 - ✅ Gestão de investimentos por objetivo
-- ✅ Dashboard com visualizações
-- ✅ Interface responsiva
+- ✅ Metas opcionais para objetivos com progress tracking
+- ✅ Dashboard com visualizações e progresso de metas
+- ✅ Interface responsiva (mobile otimizado)
 - ✅ Formulários com validação
 - ✅ Autenticação completa (Login/Registro/Logout)
 - ✅ Proteção de rotas
 - ✅ Dark mode / Light mode
-- ✅ Toast notifications
+- ✅ Toast notifications elegantes
 - ✅ Design sofisticado e moderno
 - ✅ Animações e micro-interações
+- ✅ Modais de confirmação customizados
+- ✅ Navegação breadcrumb
 
 ### Implementadas (Backend)
 - ✅ API REST com FastAPI
@@ -145,14 +149,22 @@ Wolf Planner/
 8. ✅ Dark mode / Light mode
 9. ✅ Toast notifications
 10. ✅ Animações e micro-interações
+11. ✅ Deploy completo em produção (Railway)
+12. ✅ Funcionalidade de metas opcionais
+13. ✅ Progress bars e indicadores visuais
+14. ✅ Otimizações de responsividade mobile
+15. ✅ Sistema de confirmação elegante
 
 ### Melhorias Futuras (Opcional)
 - 📊 Gráficos mais avançados (Chart.js/Recharts)
 - 📱 PWA (Progressive Web App)
 - 📄 Exportação de relatórios (PDF/Excel)
-- 🎯 Metas de investimento com progresso
+- ⏰ Metas com prazos (deadlines)
 - 📧 Notificações por email
 - 🔄 Sincronização em tempo real
+- 💰 Comparação com inflação/CDI
+- 🎯 Alertas de meta próxima do vencimento
+- 📈 Histórico de evolução dos investimentos
 
 ## Credenciais Supabase (Desenvolvimento)
 
@@ -182,11 +194,15 @@ uvicorn main:app --reload --port 8000  # Rodar servidor
 
 ## Variáveis de Ambiente Necessárias
 
-### Frontend (.env.local)
+### Frontend (.env.local ou .env.production)
 ```
+# Desenvolvimento
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
 NEXT_PUBLIC_SUPABASE_URL=https://bkjimpowmyufyfcsbdxw.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# Produção
+NEXT_PUBLIC_API_URL=https://wolf-planner-production.up.railway.app/api
 ```
 
 ### Backend (.env)

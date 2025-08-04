@@ -36,13 +36,14 @@ export function InvestimentoForm({ onSubmit, investimento, trigger }: Investimen
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button size="sm">
+          <Button size="sm" className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Investimento
+            <span className="hidden sm:inline">Adicionar Investimento</span>
+            <span className="sm:hidden">Novo Investimento</span>
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{investimento ? "Editar Investimento" : "Adicionar Investimento"}</DialogTitle>
         </DialogHeader>

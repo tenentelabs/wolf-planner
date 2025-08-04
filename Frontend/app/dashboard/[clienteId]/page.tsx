@@ -142,40 +142,43 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 py-8">
-        <Breadcrumb className="mb-6">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <Breadcrumb className="mb-4">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/clientes">Clientes</Link>
+                <Link href="/clientes" className="text-sm">Clientes</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href={`/carteira/${clienteId}`}>Carteira</Link>
+                <Link href={`/carteira/${clienteId}`} className="text-sm">Carteira</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Dashboard {cliente ? `- ${cliente.nome}` : ''}</BreadcrumbPage>
+              <BreadcrumbPage className="text-sm">
+                <span className="hidden sm:inline">Dashboard {cliente ? `- ${cliente.nome}` : ''}</span>
+                <span className="sm:hidden">Dashboard</span>
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
         
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Button asChild variant="outline" size="sm">
+        <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-4">
+            <Button asChild variant="outline" size="sm" className="w-fit">
               <Link href="/clientes">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar
               </Link>
             </Button>
             <div>
-              <h1 className="text-4xl font-bold text-foreground">Dashboard - {cliente.nome}</h1>
+              <h1 className="text-2xl font-bold text-foreground sm:text-4xl">Dashboard - {cliente.nome}</h1>
             </div>
           </div>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href={`/carteira/${clienteId}`}>Gerenciar Carteira</Link>
           </Button>
         </div>
@@ -187,7 +190,7 @@ export default function DashboardPage() {
         )}
 
         {/* Cards de Resumo */}
-        <StaggeredContainer className="grid md:grid-cols-3 gap-6 mb-8">
+        <StaggeredContainer className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
           <StaggeredItem>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -227,7 +230,7 @@ export default function DashboardPage() {
           </StaggeredItem>
         </StaggeredContainer>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           {/* Gráfico de Barras dos Objetivos */}
           <FadeInCard delay={0.2}>
             <CardHeader>

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from app.models import UserCreate, UserLogin, Token
 from app.database import supabase
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -85,6 +86,14 @@ async def login(user: UserLogin):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou senha incorretos"
         )
+
+@router.get("/me")
+async def get_me(current_user = Depends(get_current_user)):
+    """Retorna as informações do usuário autenticado"""
+    return {
+        "id": current_user["id"],
+        "email": current_user["email"]
+    }
 
 @router.post("/logout")
 async def logout():
