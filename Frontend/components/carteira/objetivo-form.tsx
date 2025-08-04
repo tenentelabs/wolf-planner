@@ -11,7 +11,7 @@ import { Plus } from "lucide-react"
 import type { Objetivo } from "@/types"
 
 interface ObjetivoFormProps {
-  onSubmit: (nome: string, valorMeta?: number) => void
+  onSubmit: (nome: string, valorMeta?: number | null) => void
   objetivo?: Objetivo
   trigger?: React.ReactNode
 }
@@ -23,7 +23,23 @@ export function ObjetivoForm({ onSubmit, objetivo, trigger }: ObjetivoFormProps)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const meta = valorMeta ? parseFloat(valorMeta) : undefined
+    // Se o campo estiver vazio, enviar null para remover a meta
+    // Se tiver valor, converter para float
+    // Se for 0, manter como 0
+    let meta: number | null | undefined = undefined
+    
+    if (valorMeta === "" || valorMeta === null) {
+      // Campo vazio = remover meta (enviar null)
+      meta = null
+    } else {
+      const parsedValue = parseFloat(valorMeta)
+      if (!isNaN(parsedValue) && parsedValue >= 0) {
+        meta = parsedValue
+      } else {
+        meta = null // Valor inválido = remover meta
+      }
+    }
+    
     onSubmit(nome, meta)
     setOpen(false)
     if (!objetivo) {
@@ -59,7 +75,20 @@ export function ObjetivoForm({ onSubmit, objetivo, trigger }: ObjetivoFormProps)
             />
           </div>
           <div>
-            <Label htmlFor="valorMeta">Meta Financeira (Opcional)</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="valorMeta">Meta Financeira (Opcional)</Label>
+              {objetivo && objetivo.valor_meta && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setValorMeta("")}
+                  className="text-xs text-muted-foreground hover:text-destructive"
+                >
+                  Remover Meta
+                </Button>
+              )}
+            </div>
             <Input
               id="valorMeta"
               type="number"
@@ -67,10 +96,13 @@ export function ObjetivoForm({ onSubmit, objetivo, trigger }: ObjetivoFormProps)
               min="0"
               value={valorMeta}
               onChange={(e) => setValorMeta(e.target.value)}
-              placeholder="Ex: 15000 (deixe vazio se não quiser meta)"
+              placeholder="Ex: 15000 (deixe vazio para remover meta)"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Defina um valor que você pretende atingir com este objetivo
+              {valorMeta ? 
+                "Defina um valor que você pretende atingir com este objetivo" :
+                "Deixe vazio para não ter meta financeira"
+              }
             </p>
           </div>
           <div className="flex justify-end space-x-2">

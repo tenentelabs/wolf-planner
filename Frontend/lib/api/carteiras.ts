@@ -4,10 +4,12 @@ import type { Objetivo, Investimento } from '@/types';
 export interface ObjetivoCreate {
   nome: string;
   cliente_id: string;
+  valor_meta?: number | null;
 }
 
 export interface ObjetivoUpdate {
   nome?: string;
+  valor_meta?: number | null;
 }
 
 export interface InvestimentoCreate {

@@ -65,7 +65,7 @@ export default function CarteiraPage() {
     }
   }
 
-  const handleAddObjetivo = async (nome: string, valorMeta?: number) => {
+  const handleAddObjetivo = async (nome: string, valorMeta?: number | null) => {
     try {
       setLoadingAction(true)
       const newObjetivo = await carteirasService.criarObjetivo({
@@ -81,7 +81,7 @@ export default function CarteiraPage() {
     }
   }
 
-  const handleEditObjetivo = async (objetivoId: string, nome: string, valorMeta?: number) => {
+  const handleEditObjetivo = async (objetivoId: string, nome: string, valorMeta?: number | null) => {
     try {
       setLoadingAction(true)
       const updatedObjetivo = await carteirasService.atualizarObjetivo(objetivoId, { nome, valor_meta: valorMeta })
