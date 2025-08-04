@@ -105,6 +105,13 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const token = options.token || this.getToken();
 
+    console.log(`🌐 ApiClient: ${options.method || 'GET'} ${url}`);
+    if (token) {
+      console.log(`🔑 ApiClient: Usando token: ${token.substring(0, 20)}...`);
+    } else {
+      console.log('❌ ApiClient: Nenhum token disponível');
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -120,32 +127,56 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    console.log('📋 ApiClient: Headers:', { ...headers, Authorization: headers.Authorization ? `Bearer ${token?.substring(0, 20)}...` : 'undefined' });
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
       });
 
+      console.log(`📊 ApiClient: Response status: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { detail: `HTTP ${response.status} ${response.statusText}` };
+        }
+        
+        console.error('❌ ApiClient: Error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData,
+          url
+        });
+
         throw new ApiError(
-          error.detail || `HTTP error! status: ${response.status}`,
+          errorData.detail || `HTTP error! status: ${response.status}`,
           response.status,
-          error
+          errorData
         );
       }
 
       // Handle empty responses
       const text = await response.text();
-      return text ? JSON.parse(text) : {} as T;
+      const result = text ? JSON.parse(text) : {} as T;
+      
+      console.log('✅ ApiClient: Success response:', result);
+      return result;
     } catch (error) {
       if (error instanceof ApiError) {
+        console.error('💥 ApiClient: API Error:', error);
         throw error;
       }
-      throw new ApiError(
+      
+      const networkError = new ApiError(
         error instanceof Error ? error.message : 'Network error',
         0
       );
+      console.error('🔌 ApiClient: Network Error:', networkError);
+      throw networkError;
     }
   }
 
