@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils';
+
 interface FetchOptions extends RequestInit {
   token?: string;
 }
@@ -105,11 +107,11 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const token = options.token || this.getToken();
 
-    console.log(`🌐 ApiClient: ${options.method || 'GET'} ${url}`);
+    logger.debug(`🌐 ApiClient: ${options.method || 'GET'} ${url}`);
     if (token) {
-      console.log(`🔑 ApiClient: Usando token: ${token.substring(0, 20)}...`);
+      logger.debug(`🔑 ApiClient: Usando token: ${token.substring(0, 20)}...`);
     } else {
-      console.log('❌ ApiClient: Nenhum token disponível');
+      logger.debug('❌ ApiClient: Nenhum token disponível');
     }
 
     const headers: Record<string, string> = {
@@ -127,7 +129,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log('📋 ApiClient: Headers:', { ...headers, Authorization: headers.Authorization ? `Bearer ${token?.substring(0, 20)}...` : 'undefined' });
+    logger.debug('📋 ApiClient: Headers preparados');
 
     try {
       const response = await fetch(url, {
@@ -135,7 +137,7 @@ class ApiClient {
         headers,
       });
 
-      console.log(`📊 ApiClient: Response status: ${response.status} ${response.statusText}`);
+      logger.debug(`📊 ApiClient: Response status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         let errorData;
@@ -145,11 +147,10 @@ class ApiClient {
           errorData = { detail: `HTTP ${response.status} ${response.statusText}` };
         }
         
-        console.error('❌ ApiClient: Error response:', {
+        logger.error('❌ ApiClient: Error response:', {
           status: response.status,
           statusText: response.statusText,
-          data: errorData,
-          url
+          url: endpoint
         });
 
         throw new ApiError(
@@ -163,11 +164,11 @@ class ApiClient {
       const text = await response.text();
       const result = text ? JSON.parse(text) : {} as T;
       
-      console.log('✅ ApiClient: Success response:', result);
+      logger.debug('✅ ApiClient: Success response received');
       return result;
     } catch (error) {
       if (error instanceof ApiError) {
-        console.error('💥 ApiClient: API Error:', error);
+        logger.error('💥 ApiClient: API Error:', { status: error.status, message: error.message });
         throw error;
       }
       
@@ -175,7 +176,7 @@ class ApiClient {
         error instanceof Error ? error.message : 'Network error',
         0
       );
-      console.error('🔌 ApiClient: Network Error:', networkError);
+      logger.error('🔌 ApiClient: Network Error:', { message: networkError.message });
       throw networkError;
     }
   }
