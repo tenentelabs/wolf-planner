@@ -16,7 +16,14 @@ async def listar_objetivos(cliente_id: str, current_user = Depends(get_current_u
             raise HTTPException(status_code=404, detail="Cliente não encontrado")
         
         response = supabase.table("objetivos").select("*").eq("cliente_id", cliente_id).execute()
-        return response.data
+        
+        # Converter Decimal para float em valor_meta se necessário
+        objetivos = response.data
+        for obj in objetivos:
+            if 'valor_meta' in obj and obj['valor_meta'] is not None:
+                obj['valor_meta'] = float(obj['valor_meta'])
+        
+        return objetivos
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -29,7 +36,13 @@ async def criar_objetivo(objetivo: ObjetivoCreate, current_user = Depends(get_cu
             raise HTTPException(status_code=404, detail="Cliente não encontrado")
         
         response = supabase.table("objetivos").insert(objetivo.dict()).execute()
-        return response.data[0]
+        
+        # Converter Decimal para float em valor_meta se necessário
+        objetivo_data = response.data[0]
+        if 'valor_meta' in objetivo_data and objetivo_data['valor_meta'] is not None:
+            objetivo_data['valor_meta'] = float(objetivo_data['valor_meta'])
+        
+        return objetivo_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -41,9 +54,26 @@ async def atualizar_objetivo(objetivo_id: str, objetivo: ObjetivoUpdate, current
         if not check.data or check.data[0]["clientes"]["user_id"] != current_user.id:
             raise HTTPException(status_code=404, detail="Objetivo não encontrado")
         
-        update_data = {k: v for k, v in objetivo.dict().items() if v is not None}
+        # Incluir explicitamente campos que podem ser None/null (como valor_meta)
+        update_data = {}
+        objetivo_dict = objetivo.dict()
+        
+        for k, v in objetivo_dict.items():
+            if k == 'valor_meta':
+                # Para valor_meta, incluir sempre (mesmo se None/null para remover)
+                update_data[k] = v
+            elif v is not None:
+                # Para outros campos, só incluir se não for None
+                update_data[k] = v
+        
         response = supabase.table("objetivos").update(update_data).eq("id", objetivo_id).execute()
-        return response.data[0]
+        
+        # Converter Decimal para float em valor_meta se necessário
+        objetivo_data = response.data[0]
+        if 'valor_meta' in objetivo_data and objetivo_data['valor_meta'] is not None:
+            objetivo_data['valor_meta'] = float(objetivo_data['valor_meta'])
+        
+        return objetivo_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -139,9 +169,15 @@ async def obter_carteira_completa(cliente_id: str, current_user = Depends(get_cu
         # Buscar objetivos
         objetivos = supabase.table("objetivos").select("*").eq("cliente_id", cliente_id).execute()
         
+        # Converter Decimal para float em valor_meta para todos os objetivos
+        objetivos_data = objetivos.data
+        for obj in objetivos_data:
+            if 'valor_meta' in obj and obj['valor_meta'] is not None:
+                obj['valor_meta'] = float(obj['valor_meta'])
+        
         # Buscar investimentos para cada objetivo
         investimentos_por_objetivo = {}
-        for objetivo in objetivos.data:
+        for objetivo in objetivos_data:
             investimentos = supabase.table("investimentos").select("*").eq("objetivo_id", objetivo["id"]).execute()
             # Converter Decimal para float em todos os investimentos
             investimentos_data = investimentos.data
@@ -152,7 +188,7 @@ async def obter_carteira_completa(cliente_id: str, current_user = Depends(get_cu
         
         return {
             "cliente_id": cliente_id,
-            "objetivos": objetivos.data,
+            "objetivos": objetivos_data,
             "investimentos_por_objetivo": investimentos_por_objetivo
         }
     except Exception as e:
