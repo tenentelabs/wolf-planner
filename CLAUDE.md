@@ -72,6 +72,10 @@ interface ClienteCarteira {
 - ✅ Animações e micro-interações
 - ✅ Modais de confirmação customizados
 - ✅ Navegação breadcrumb
+- ✅ **UI Responsiva Avançada**: Header adaptativo, navegação contextual por viewport
+- ✅ **Loading States Inteligentes**: SmartSkeleton, StaggeredContainer, FadeInCard
+- ✅ **API Optimization**: Hook useClienteData com cache de 30s, prevenção de duplicação
+- ✅ **Accessibility**: Focus states aprimorados, keyboard navigation, screen reader support
 
 ### Implementadas (Backend)
 - ✅ API REST com FastAPI
@@ -117,6 +121,48 @@ Wolf Planner/
     └── requirements.txt # Dependências Python
 ```
 
+## Componentes UI Avançados
+
+### Loading States (/components/ui/loading-states.tsx)
+```typescript
+// SmartSkeleton - Skeleton inteligente com variants
+<SmartSkeleton variant="card" className="min-h-48" />
+<SmartSkeleton className="h-6 w-48" />
+
+// StaggeredContainer - Animações sequenciais
+<StaggeredContainer>
+  <StaggeredItem delay={0.1}>Card 1</StaggeredItem>
+  <StaggeredItem delay={0.2}>Card 2</StaggeredItem>
+</StaggeredContainer>
+
+// FadeInCard - Cards com animação de entrada
+<FadeInCard delay={0.3}>Conteúdo</FadeInCard>
+```
+
+### API Optimization Hook (/hooks/use-cliente-data.ts)
+```typescript
+// Hook otimizado com cache de 30s
+const { cliente, objetivos, loading, error, refreshData } = useClienteData(clienteId)
+
+// Funcionalidades:
+- Cache inteligente (30s)
+- Prevenção de requests duplicados  
+- Parallel data fetching
+- Error handling robusto
+- Refresh manual
+```
+
+### Header Responsivo (/components/layout/header.tsx)
+```typescript
+// Logo responsivo
+<span className="hidden sm:inline">Wolf Planner</span>
+<span className="sm:hidden">WP</span>
+
+// Navegação adaptativa
+<span className="hidden sm:inline">Texto do botão</span>
+// Mobile: apenas ícones | Desktop: ícones + texto
+```
+
 ## Rotas da Aplicação
 
 - `/` - Página inicial (protegida)
@@ -154,6 +200,11 @@ Wolf Planner/
 13. ✅ Progress bars e indicadores visuais
 14. ✅ Otimizações de responsividade mobile
 15. ✅ Sistema de confirmação elegante
+16. ✅ **Overflow horizontal eliminado**: Header responsivo com logo "WP" em mobile
+17. ✅ **Loading states avançados**: SmartSkeleton, animações staggered
+18. ✅ **Otimização de APIs**: Hook useClienteData com cache inteligente
+19. ✅ **Acessibilidade aprimorada**: Focus states, navegação por teclado
+20. ✅ **Validação mobile completa**: Testado via Playwright MCP em 375px/768px/1440px
 
 ### Melhorias Futuras (Opcional)
 - 📊 Gráficos mais avançados (Chart.js/Recharts)
@@ -211,6 +262,125 @@ SUPABASE_URL=
 SUPABASE_SERVICE_KEY=
 JWT_SECRET=
 ```
+
+## Performance e Troubleshooting
+
+### Otimizações Implementadas
+- **Autenticação otimizada**: Timeout reduzido (8s), retry strategy (2 tentativas), fallback de cache
+- **Logging condicional**: Logs detalhados apenas em desenvolvimento para reduzir overhead em produção
+- **Gerenciamento de tokens**: Múltiplos fallbacks (localStorage, sessionStorage, cookies)
+- **Interface responsiva**: Breakpoints otimizados para mobile/tablet/desktop
+- **Header responsivo**: Logo adaptativo ("Wolf Planner" → "WP"), navegação contextual (texto completo ↔ ícones)
+- **Loading states inteligentes**: SmartSkeleton com variants, StaggeredContainer para animações sequenciais
+- **API caching**: Hook useClienteData com cache de 30s, prevenção de duplicação de chamadas
+- **Overflow prevention**: Eliminação completa de scroll horizontal em mobile (375px validated)
+
+### Problemas Comuns e Soluções
+
+#### Login não funciona após registro
+- **Causa**: Delay na propagação do token/sessão
+- **Solução**: Implementado retry automático com fallback de cache
+
+#### Não consegue deletar metas de objetivos
+- **Causa**: Backend filtrava valores null em updates
+- **Solução**: Backend modificado para incluir explicitamente valor_meta mesmo quando null
+
+#### Carregamento lento ("Verificando autenticação")
+- **Causa**: Logs excessivos e timeouts longos em produção
+- **Solução**: Logging condicional e timeout otimizado
+
+#### Desconectado ao atualizar página
+- **Verificação**: Checar se tokens estão sendo persistidos corretamente
+- **Solução**: Verificar configuração de cookies e localStorage
+
+#### Overflow horizontal em mobile (RESOLVIDO)
+- **Causa**: Header com largura fixa, elementos ultrapassando viewport de 375px
+- **Solução**: Header responsivo implementado com logo "WP" e navegação icon-only em mobile
+
+#### Camada branca bloqueando interface (RESOLVIDO)  
+- **Causa**: CSS rules problemáticas (container min-height, space-y gaps)
+- **Solução**: Remoção das regras conflitantes, layout mobile otimizado
+
+### Deploy e Monitoramento
+- **Plataforma**: Railway (auto-deploy no push para main)
+- **Logs**: Acessíveis via Railway dashboard
+- **URLs**:
+  - Frontend: https://wolf-planner-frontend-production-f6dc.up.railway.app
+  - Backend: https://wolf-planner-production-5eda.up.railway.app
+
+## 🎭 Playwright MCP - Protocolo de Desenvolvimento UI
+
+### Configuração do Playwright MCP
+- **Browser**: Firefox (configurado e validado)
+- **Viewports padrão**: 375px (mobile), 768px (tablet), 1440px (desktop)
+- **Ferramentas disponíveis**: Navegação, screenshots, snapshots, interação, avaliação JavaScript
+
+### System Prompt para Desenvolvimento UI
+
+**IMPORTANTE**: Todas as mudanças de design do frontend devem seguir este protocolo obrigatório:
+
+#### 1. 📋 **PRÉ-IMPLEMENTAÇÃO** (Análise com Playwright MCP)
+```
+ANTES de implementar qualquer mudança de UI/UX:
+1. Use Playwright MCP para navegar e analisar o estado atual
+2. Capture screenshots/snapshots dos componentes afetados
+3. Teste em todos os viewports (375px, 768px, 1440px)
+4. Identifique possíveis problemas de layout, overflow, acessibilidade
+5. Documente o estado atual e problemas encontrados
+```
+
+#### 2. 🔧 **IMPLEMENTAÇÃO** (Desenvolvimento Orientado)
+```
+Durante a implementação:
+1. Implemente as mudanças baseadas na análise prévia
+2. Foque em resolver os problemas identificados
+3. Mantenha compatibilidade responsiva
+4. Preserve funcionalidades existentes
+```
+
+#### 3. ✅ **PÓS-IMPLEMENTAÇÃO** (Validação com Playwright MCP)
+```
+APÓS implementar mudanças de UI/UX:
+1. Use Playwright MCP para testar a implementação
+2. Valide em todos os viewports obrigatoriamente
+3. Teste interações (cliques, navegação, formulários)
+4. Verifique se problemas anteriores foram resolvidos
+5. IDENTIFIQUE AUTOMATICAMENTE novos problemas ou melhorias necessárias
+6. Se problemas forem encontrados, IMPLEMENTE correções imediatamente
+7. Documente o resultado final e suggest próximas otimizações
+```
+
+#### 4. 🔄 **Ciclo Contínuo de Melhoria**
+```
+Após cada validação:
+1. Se novos problemas foram identificados → volte para implementação
+2. Se melhorias óbvias foram detectadas → sugira próximas iterações
+3. Documente lições aprendidas no CLAUDE.md
+4. Atualize guidelines de desenvolvimento
+```
+
+### Comandos Playwright MCP Essenciais
+```javascript
+// Navegação e sizing
+await page.goto('http://localhost:3001/...')
+await page.setViewportSize({ width: 375, height: 667 })
+
+// Análise de overflow
+await page.evaluate(() => ({
+  hasHorizontalScroll: document.documentElement.scrollWidth > window.innerWidth,
+  viewport: { width: window.innerWidth, height: window.innerHeight }
+}))
+
+// Testes de responsividade
+await page.screenshot({ fullPage: true })
+await page.getByRole('button', { name: 'Botão' }).click()
+```
+
+### Lições Aprendidas
+- **Overflow horizontal**: Headers fixos são problemáticos em mobile
+- **Loading states**: SmartSkeleton melhora UX significativamente  
+- **API optimization**: Caching previne requests desnecessários
+- **Responsividade**: Logo e navegação precisam ser contextuais ao viewport
 
 ## Notas de Segurança
 - Dados financeiros sensíveis requerem autenticação

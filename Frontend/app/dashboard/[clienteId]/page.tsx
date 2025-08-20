@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { clientesService } from "@/lib/api/clientes"
-import { carteirasService } from "@/lib/api/carteiras"
-import type { Cliente, Objetivo } from "@/types"
+import type { Objetivo } from "@/types"
+import { useClienteData } from "@/hooks/use-cliente-data"
 import { ArrowLeft, TrendingUp, Target, DollarSign, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
@@ -20,44 +19,8 @@ export default function DashboardPage() {
   const params = useParams()
   const clienteId = params.clienteId as string
 
-  const [cliente, setCliente] = useState<Cliente | null>(null)
-  const [objetivos, setObjetivos] = useState<Objetivo[]>([])
+  const { cliente, objetivos, loading, error } = useClienteData(clienteId)
   const [selectedObjetivo, setSelectedObjetivo] = useState<Objetivo | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadData()
-  }, [clienteId])
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // Carregar dados do cliente
-      const [clienteData, objetivosData] = await Promise.all([
-        clientesService.obter(clienteId),
-        carteirasService.listarObjetivos(clienteId)
-      ])
-      
-      setCliente(clienteData)
-      
-      // Carregar investimentos para cada objetivo
-      const objetivosComInvestimentos = await Promise.all(
-        objetivosData.map(async (objetivo) => {
-          const investimentos = await carteirasService.listarInvestimentos(objetivo.id)
-          return { ...objetivo, investimentos }
-        })
-      )
-      
-      setObjetivos(objetivosComInvestimentos)
-    } catch (err: any) {
-      setError(err.message || "Erro ao carregar dados")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getTotalObjetivo = (objetivo: Objetivo) => {
     return objetivo.investimentos.reduce((total, inv) => total + inv.valor, 0)

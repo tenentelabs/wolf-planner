@@ -1,20 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ObjetivoForm } from "@/components/carteira/objetivo-form"
 import { InvestimentoForm } from "@/components/carteira/investimento-form"
-import { clientesService } from "@/lib/api/clientes"
 import { carteirasService } from "@/lib/api/carteiras"
-import type { Cliente, Objetivo, Investimento } from "@/types"
+import type { Objetivo, Investimento } from "@/types"
+import { useClienteData } from "@/hooks/use-cliente-data"
 import { Edit, Trash2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Skeleton } from "@/components/ui/skeleton"
+import { SmartSkeleton } from "@/components/ui/loading-states"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 
@@ -22,60 +22,20 @@ export default function CarteiraPage() {
   const params = useParams()
   const clienteId = params.clienteId as string
 
-  const [cliente, setCliente] = useState<Cliente | null>(null)
-  const [objetivos, setObjetivos] = useState<Objetivo[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { cliente, objetivos, loading, error, refreshData } = useClienteData(clienteId)
   const [loadingAction, setLoadingAction] = useState(false)
-
-  useEffect(() => {
-    loadData()
-  }, [clienteId])
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // Carregar dados do cliente
-      const [clienteData, objetivosData] = await Promise.all([
-        clientesService.obter(clienteId),
-        carteirasService.listarObjetivos(clienteId)
-      ])
-      
-      setCliente(clienteData)
-      
-      // Carregar investimentos para cada objetivo
-      const objetivosComInvestimentos = await Promise.all(
-        objetivosData.map(async (objetivo) => {
-          const investimentos = await carteirasService.listarInvestimentos(objetivo.id)
-          return { ...objetivo, investimentos }
-        })
-      )
-      
-      setObjetivos(objetivosComInvestimentos)
-    } catch (err: any) {
-      setError(err.message || "Erro ao carregar dados")
-      // Se for erro 404, significa que o cliente não foi encontrado
-      if (err.status === 404) {
-        setCliente(null)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleAddObjetivo = async (nome: string, valorMeta?: number | null) => {
     try {
       setLoadingAction(true)
-      const newObjetivo = await carteirasService.criarObjetivo({
+      await carteirasService.criarObjetivo({
         nome,
         cliente_id: clienteId,
         valor_meta: valorMeta
       })
-      setObjetivos([...objetivos, { ...newObjetivo, investimentos: [] }])
+      await refreshData()
     } catch (err: any) {
-      setError(err.message || "Erro ao criar objetivo")
+      console.error("Erro ao criar objetivo:", err.message || "Erro desconhecido")
     } finally {
       setLoadingAction(false)
     }
@@ -84,10 +44,10 @@ export default function CarteiraPage() {
   const handleEditObjetivo = async (objetivoId: string, nome: string, valorMeta?: number | null) => {
     try {
       setLoadingAction(true)
-      const updatedObjetivo = await carteirasService.atualizarObjetivo(objetivoId, { nome, valor_meta: valorMeta })
-      setObjetivos(objetivos.map((obj) => (obj.id === objetivoId ? { ...obj, nome: updatedObjetivo.nome, valor_meta: updatedObjetivo.valor_meta } : obj)))
+      await carteirasService.atualizarObjetivo(objetivoId, { nome, valor_meta: valorMeta })
+      await refreshData()
     } catch (err: any) {
-      setError(err.message || "Erro ao atualizar objetivo")
+      console.error("Erro ao atualizar objetivo:", err.message || "Erro desconhecido")
     } finally {
       setLoadingAction(false)
     }
@@ -97,9 +57,9 @@ export default function CarteiraPage() {
     try {
       setLoadingAction(true)
       await carteirasService.deletarObjetivo(objetivoId)
-      setObjetivos(objetivos.filter((obj) => obj.id !== objetivoId))
+      await refreshData()
     } catch (err: any) {
-      setError(err.message || "Erro ao deletar objetivo")
+      console.error("Erro ao deletar objetivo:", err.message || "Erro desconhecido")
     } finally {
       setLoadingAction(false)
     }
@@ -108,16 +68,14 @@ export default function CarteiraPage() {
   const handleAddInvestimento = async (objetivoId: string, investimentoData: Omit<Investimento, "id">) => {
     try {
       setLoadingAction(true)
-      const newInvestimento = await carteirasService.criarInvestimento({
+      await carteirasService.criarInvestimento({
         nome: investimentoData.nome,
         valor: investimentoData.valor,
         objetivo_id: objetivoId
       })
-      setObjetivos(objetivos.map((obj) =>
-        obj.id === objetivoId ? { ...obj, investimentos: [...obj.investimentos, newInvestimento] } : obj
-      ))
+      await refreshData()
     } catch (err: any) {
-      setError(err.message || "Erro ao criar investimento")
+      console.error("Erro ao criar investimento:", err.message || "Erro desconhecido")
     } finally {
       setLoadingAction(false)
     }
@@ -130,22 +88,13 @@ export default function CarteiraPage() {
   ) => {
     try {
       setLoadingAction(true)
-      const updatedInvestimento = await carteirasService.atualizarInvestimento(investimentoId, {
+      await carteirasService.atualizarInvestimento(investimentoId, {
         nome: investimentoData.nome,
         valor: investimentoData.valor
       })
-      setObjetivos(objetivos.map((obj) =>
-        obj.id === objetivoId
-          ? {
-              ...obj,
-              investimentos: obj.investimentos.map((inv) =>
-                inv.id === investimentoId ? updatedInvestimento : inv
-              ),
-            }
-          : obj
-      ))
+      await refreshData()
     } catch (err: any) {
-      setError(err.message || "Erro ao atualizar investimento")
+      console.error("Erro ao atualizar investimento:", err.message || "Erro desconhecido")
     } finally {
       setLoadingAction(false)
     }
@@ -155,13 +104,9 @@ export default function CarteiraPage() {
     try {
       setLoadingAction(true)
       await carteirasService.deletarInvestimento(investimentoId)
-      setObjetivos(objetivos.map((obj) =>
-        obj.id === objetivoId
-          ? { ...obj, investimentos: obj.investimentos.filter((inv) => inv.id !== investimentoId) }
-          : obj
-      ))
+      await refreshData()
     } catch (err: any) {
-      setError(err.message || "Erro ao deletar investimento")
+      console.error("Erro ao deletar investimento:", err.message || "Erro desconhecido")
     } finally {
       setLoadingAction(false)
     }
@@ -186,18 +131,26 @@ export default function CarteiraPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="container mx-auto px-4 py-8">
-          <Skeleton className="h-12 w-64 mb-8" />
+        <div className="container mx-auto px-4 py-4 sm:py-8">
+          {/* Breadcrumb skeleton */}
+          <SmartSkeleton className="h-6 w-48 mb-4" />
+          
+          {/* Header skeleton */}
+          <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-4">
+              <SmartSkeleton className="h-9 w-20" />
+              <SmartSkeleton className="h-8 w-64" />
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-4">
+              <SmartSkeleton className="h-9 w-32" />
+              <SmartSkeleton className="h-9 w-36" />
+            </div>
+          </div>
+          
+          {/* Objetivo cards skeleton */}
           <div className="space-y-6">
             {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-6 w-48" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-20 w-full" />
-                </CardContent>
-              </Card>
+              <SmartSkeleton key={i} variant="card" className="min-h-48" />
             ))}
           </div>
         </div>
