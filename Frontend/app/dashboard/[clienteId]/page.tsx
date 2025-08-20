@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { StaggeredContainer, StaggeredItem, FadeInCard } from "@/components/ui/loading-states"
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 
 export default function DashboardPage() {
   const params = useParams()
@@ -46,6 +47,42 @@ export default function DashboardPage() {
       meta: objetivo.valor_meta,
       atingida: totalInvestido >= objetivo.valor_meta
     }
+  }
+
+  // Cores para o gráfico de pizza
+  const COLORS = [
+    '#3b82f6', // blue-500
+    '#f59e0b', // amber-500  
+    '#10b981', // emerald-500
+    '#8b5cf6', // violet-500
+    '#ef4444', // red-500
+    '#06b6d4', // cyan-500
+    '#ec4899', // pink-500
+  ]
+
+  // Preparar dados para o gráfico de pizza
+  const prepareChartData = (objetivo: Objetivo) => {
+    return objetivo.investimentos.map((investimento, index) => ({
+      name: investimento.nome,
+      value: investimento.valor,
+      percentage: ((investimento.valor / getTotalObjetivo(objetivo)) * 100).toFixed(1),
+      color: COLORS[index % COLORS.length]
+    }))
+  }
+
+  // Tooltip customizado para o gráfico
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+          <p className="font-medium text-foreground">{data.name}</p>
+          <p className="text-accent font-semibold">{formatCurrency(data.value)}</p>
+          <p className="text-muted-foreground text-sm">{data.percentage}% do objetivo</p>
+        </div>
+      )
+    }
+    return null
   }
 
   if (loading) {
@@ -203,7 +240,8 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {objetivos.map((objetivo) => {
                   const total = getTotalObjetivo(objetivo)
-                  const percentage = getObjetivoPercentage(objetivo)
+                  const carteiraPorcentagem = getObjetivoPercentage(objetivo)
+                  const progressoMeta = getProgressoMeta(objetivo)
 
                   return (
                     <div key={objetivo.id} className="group cursor-pointer hover:bg-muted/30 p-3 rounded-lg transition-all" onClick={() => setSelectedObjetivo(objetivo)}>
@@ -211,26 +249,45 @@ export default function DashboardPage() {
                         <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{objetivo.nome}</span>
                         <span className="text-sm font-semibold text-accent">{formatCurrency(total)}</span>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 shadow-sm group-hover:shadow-md"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between items-center mt-1">
-                        <div className="text-xs text-muted-foreground font-medium">{percentage.toFixed(1)}% do total</div>
-                        {(() => {
-                          const progressoMeta = getProgressoMeta(objetivo)
-                          if (progressoMeta) {
-                            return (
-                              <div className={`text-xs font-medium ${progressoMeta.atingida ? 'text-green-600' : 'text-blue-600'}`}>
-                                Meta: {progressoMeta.progresso.toFixed(1)}%
-                              </div>
-                            )
-                          }
-                          return null
-                        })()}
-                      </div>
+                      
+                      {/* Barra de Progresso da Meta */}
+                      {progressoMeta ? (
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">Meta: {formatCurrency(progressoMeta.meta)}</span>
+                            <span className={`font-medium ${progressoMeta.atingida ? 'text-green-600' : 'text-blue-600'}`}>
+                              {progressoMeta.progresso.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                            <div
+                              className="h-3 rounded-full transition-all duration-500 shadow-sm group-hover:shadow-md"
+                              style={{ 
+                                width: `${progressoMeta.progresso}%`,
+                                background: progressoMeta.atingida 
+                                  ? 'linear-gradient(to right, #10b981, #059669)' 
+                                  : 'linear-gradient(to right, #3b82f6, #2563eb)'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">Sem meta definida</span>
+                            <span className="text-muted-foreground">{carteiraPorcentagem.toFixed(1)}% do total</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                            <div
+                              className="h-3 rounded-full transition-all duration-500 shadow-sm group-hover:shadow-md"
+                              style={{ 
+                                width: `${carteiraPorcentagem}%`,
+                                background: 'linear-gradient(to right, #9ca3af, #6b7280)'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -257,29 +314,71 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {selectedObjetivo ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="text-lg font-semibold text-green-600 mb-4">
                     Total: {formatCurrency(getTotalObjetivo(selectedObjetivo))}
                   </div>
 
-                  {selectedObjetivo.investimentos.map((investimento) => {
-                    const percentage =
-                      selectedObjetivo.investimentos.length > 0
-                        ? (investimento.valor / getTotalObjetivo(selectedObjetivo)) * 100
-                        : 0
-
-                    return (
-                      <div key={investimento.id} className="border-l-4 border-primary/60 pl-4 py-3 bg-gradient-to-r from-muted/20 to-transparent rounded-r-lg hover:from-muted/40 transition-colors">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-foreground">{investimento.nome}</span>
-                          <span className="text-accent font-semibold">{formatCurrency(investimento.valor)}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground font-medium">{percentage.toFixed(1)}% deste objetivo</div>
+                  {selectedObjetivo.investimentos.length > 0 ? (
+                    <div className="space-y-6">
+                      {/* Gráfico de Pizza */}
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={prepareChartData(selectedObjetivo)}
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                              animationBegin={0}
+                              animationDuration={800}
+                            >
+                              {prepareChartData(selectedObjetivo).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend 
+                              verticalAlign="bottom" 
+                              height={36}
+                              formatter={(value: string, entry: any) => (
+                                <span className="text-sm font-medium text-foreground">
+                                  {value}
+                                </span>
+                              )}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
-                    )
-                  })}
 
-                  {selectedObjetivo.investimentos.length === 0 && (
+                      {/* Lista detalhada dos investimentos */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                          Detalhamento
+                        </h4>
+                        {selectedObjetivo.investimentos.map((investimento, index) => {
+                          const percentage = ((investimento.valor / getTotalObjetivo(selectedObjetivo)) * 100).toFixed(1)
+                          return (
+                            <div key={investimento.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                              <div className="flex items-center space-x-3">
+                                <div 
+                                  className="w-4 h-4 rounded-full" 
+                                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                />
+                                <span className="font-medium text-foreground">{investimento.nome}</span>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-accent font-semibold">{formatCurrency(investimento.valor)}</div>
+                                <div className="text-sm text-muted-foreground">{percentage}%</div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
                     <div className="text-center py-8">
                       <div className="w-12 h-12 bg-muted rounded-full mx-auto mb-3 flex items-center justify-center">
                         <DollarSign className="h-6 w-6 text-muted-foreground" />
